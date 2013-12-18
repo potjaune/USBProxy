@@ -79,8 +79,8 @@ class USBKeyboardInterface(USBInterface):
         self.last_send_was_nil = 0
 
     def reset_limiter(self):
-        self.hackBrakes = 4
-        self.hackGas = 4
+        self.hackBrakes = 5 #5 seconds of brakes
+        self.hackGas = 5 #5 seconds of gas
         self.hackTimer = 0
 
     def update_rate_limiter_leds(self):
