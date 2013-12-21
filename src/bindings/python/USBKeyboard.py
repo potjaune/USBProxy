@@ -64,13 +64,13 @@ class USBKeyboardInterface(USBInterface):
             contents.close()
 
         #TODO
-        #self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
-        self.button1_rate_led = open('/sys/class/leds/beaglebone:green:usr3/brightness', 'w')
+        self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
+        #self.button1_rate_led = open('/sys/class/leds/beaglebone:green:usr3/brightness', 'w')
         self.button1_status_led = open('/sys/class/leds/beaglebone:green:usr2/brightness', 'w')
         self.button2_status_led = open('/sys/class/leds/beaglebone:green:mmc0/brightness', 'w')
         #TODO
-        #self.button2_rate_led = open('/sys/class/leds/switch:green:led_B/brightness', 'w')
-        self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
+        self.button2_rate_led = open('/sys/class/leds/switch:green:led_B/brightness', 'w')
+        #self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
 
         self.brakes_pressed = 0
         self.gas_pressed = 0
