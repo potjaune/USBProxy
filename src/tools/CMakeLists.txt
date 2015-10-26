@@ -11,3 +11,6 @@ add_executable(${TOOL} ${TOOL}.cpp)
 set_source_files_properties(${TOOL}.cpp PROPERTIES COMPILE_FLAGS  "-std=c++11 -pthread -Wall")
 target_link_libraries(${TOOL} ${TOOLS_LINK_LIBS})
 install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
+
+add_executable(uinputme uinputme.c)
+install(TARGETS uinputme RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
