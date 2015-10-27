@@ -16,6 +16,7 @@ extern "C" {
 #include "Injector_EvDev.h"
 #include "Packet.h"
 #include "HexString.h"
+#include "Injector.h"
 
 Injector_EVDEV::Injector_EVDEV(ConfigParser *cfg) {
 	input_device = "/dev/input/event1";
