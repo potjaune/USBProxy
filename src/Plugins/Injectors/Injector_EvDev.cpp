@@ -78,9 +78,8 @@ void Injector_EVDEV::get_packets(Packet** packet,SetupPacket** setup,int timeout
 				ev.value == 0 ? "key-released":"key-pressed");
 	
 		__u8 data[8] = {0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00};
-		__u8* ptrdata = data; 
 		/*TODO fill-out USB packets*/
-		*packet=new Packet(0x81, ptrdata , 8, true);
+		*packet=new Packet(0x81, data , 8, true);
 		(*packet)->transmit=true;
 		return;
 	}
