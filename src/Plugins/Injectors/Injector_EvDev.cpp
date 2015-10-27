@@ -91,7 +91,20 @@ void Injector_EVDEV::get_packets(Packet** packet,SetupPacket** setup,int timeout
 	return;
 }
 
-void Injector_EVDEV::full_pipe(Packet* p) {fprintf(stderr,"Packet returned due to full pipe & buffer\n");}
+void Injector_EVDEV::full_pipe(Packet* p) {fprintf(stderr,"Packet returned due to full pipe & buffer\n");
+	if(queue){
+		fprintf(stderr, "There is a defined queue \n");
+	}
+	else {
+		fprintf(stderr, "No queue \n");
+	}
+	if (poll_buffer[pollIndex]){
+		fprintf(stderr, "Buffer not in use \n");
+	}
+	else{
+		fprintf(stderr, "No buffer \n");
+	} 
+}
 
 static Injector_EVDEV *injector;
 
