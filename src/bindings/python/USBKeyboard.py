@@ -68,7 +68,7 @@ class USBKeyboardInterface(USBInterface):
         self.type_letter(0, 0)
 
     def type_letter(self, keycode, modifiers=0):
-        data = bytes([ modifiers, 0, keycode ])
+        data = bytes([ modifiers, 0, keycode, 0, 0, 0, 0, 0 ])
 
         if self.verbose > 2:
             print(self.name, "sending keypress 0x%02x" % keycode)
