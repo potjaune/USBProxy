@@ -165,8 +165,7 @@ for k, v in keyMap.items():
 for k, v in shiftKeyMap.items():
 	shiftCharMap[v] = k
 
-def get_keycode(car):
-	char = chr(car)
+def get_keycode(char):
 	if char in charMap:
 		return charMap[char], 0
 	if char in shiftCharMap:
