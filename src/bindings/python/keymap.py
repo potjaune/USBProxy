@@ -170,6 +170,6 @@ def get_keycode(char):
 		return charMap[char], 0
 	if char in shiftCharMap:
 		return shiftCharMap[char], MOD_LSHIFT
-	if char is None:
+	if char is None or char=="\0":
 		return 0, 0
-	raise Exception("Unable to find keycode for %s" % char)
+	raise Exception("Unable to find keycode for %s" % hex(ord(char)))
