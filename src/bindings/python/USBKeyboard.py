@@ -8,6 +8,8 @@ from USBConfiguration import *
 from USBInterface import *
 from USBEndpoint import *
 from keymap import get_keycode
+from evdev import InputDevice, categorize, ecodes
+from select import select
 
 class USBKeyboardInterface(USBInterface):
     name = "USB keyboard interface"
@@ -57,8 +59,25 @@ class USBKeyboardInterface(USBInterface):
         print(empty_preamble)
         print(chars)
         self.keys = empty_preamble + chars
+        self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event1'))
+        self.devices = {dev.fd: dev for dev in self.devices}
+        for dev in self.devices.values(): print(dev)
 
     def handle_buffer_available(self):
+        r, w, x = select(self.devices, [], [])
+        for fd in r:
+            for event in self.devices[fd].read():
+                print(event)
+                keycode = 0
+                if event.code == 1:
+                    keycode, mod = get_keycode('q')
+                    self.type_letter(keycode,mod)
+                elif event.code == 2:
+                    keycode, mod = get_keycode('a')
+                    self.type_letter(keycode,mod)
+                else:
+                    self.type_letter(0,0)
+                
         if not self.keys:
             return
 
