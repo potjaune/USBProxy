@@ -60,19 +60,33 @@ class USBKeyboardInterface(USBInterface):
         print(chars)
         self.keys = empty_preamble + chars
         
-        self.devices = map(InputDevice, ('/dev/input/event1'))
+        self.devices = map(InputDevice, ('/dev/input/event1')) 
         self.devices = {dev.fd: dev for dev in device}
         
     def handle_buffer_available(self):
         if not self.keys:
-            return
+        	return
         
-        letter_a = bytes( [modifiers, 0, 4])
-        self.r = select(devices, [], [])
-        
+        r,x,y = select(devices, [], [])
         for fd in r:
             for event in devices[fd].read():
-                self.endpoint.send(letter_a)
+            	if event.type != ecode.EV_KEY:
+            		return
+                if event.code != 1 and event.code != 2: #which button is which e.g button 1 and 2
+                	return
+                if event.value == 1: #if pressed
+                	if event.code == 1: #if button 1 is pressed
+                		letter_a = bytes( [modifiers, 0, 4])
+                		self.endpoint.send(letter_a)
+                		print("anti-brake key pressed")
+                	elif event.code == 2: #if button 2 is pressed
+                		letter_q = bytes( [modifiers, 0, 14])
+                		self.endpoint.send(letter_q)
+                		print("full throttle key pressed")
+                	
+        	elif event.value == 0: # if key released 
+        		self.endpoint.send(bytes([modifiers,0,0]))
+        		print("key released")
 
 
         letter = self.keys.pop(0)
