@@ -60,8 +60,8 @@ class USBKeyboardInterface(USBInterface):
         print(chars)
         self.keys = empty_preamble + chars
         
-        self.devices = map(InputDevice, ('/dev/input/event1')) 
-        self.devices = {dev.fd: dev for dev in device}
+        self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event1'))
+        self.devices = {dev.fd: dev for dev in self.devices}
         
     def handle_buffer_available(self):
         if not self.keys:
