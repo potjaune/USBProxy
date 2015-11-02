@@ -72,7 +72,7 @@ class USBKeyboardInterface(USBInterface):
             for event in devices[fd].read():
             	if event.type != ecode.EV_KEY:
             		return
-                if event.code != 1 and event.code != 2: #which button is which e.g button 1 and 2
+                if event.code !=1 and event.code !=2:
                 	return
                 if event.value == 1: #if pressed
                 	if event.code == 1: #if button 1 is pressed
