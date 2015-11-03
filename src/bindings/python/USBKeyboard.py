@@ -51,7 +51,7 @@ class USBKeyboardInterface(USBInterface):
         self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event1'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
-        self.current_keys = bytes([0])
+        self.current_keys = [0]
 
     def handle_buffer_available(self):
         r, w, x = select(self.devices, [], [])
@@ -77,7 +77,7 @@ class USBKeyboardInterface(USBInterface):
                         self.current_keys.remove(keycode('q'))
                 
                 if not self.current_keys:
-                    self.current_keys = bytes([0])
+                    self.current_keys = [0]
                 
                 self.endpoint.send(bytes([0,0] + self.current_keys))
 
