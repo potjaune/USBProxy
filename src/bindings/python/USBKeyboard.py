@@ -75,7 +75,7 @@ class USBKeyboardInterface(USBInterface):
                         if 4 in self.current_keys:
                             self.current_keys.remove(4)
                     elif event.code == 2:
-                        if 14 in self.curent_keys.remove(14):
+                        if 14 in self.current_keys:
                             self.current_keys.remove(14)
                 
                 if not self.current_keys:
