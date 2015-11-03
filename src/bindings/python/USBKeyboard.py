@@ -64,6 +64,7 @@ class USBKeyboardInterface(USBInterface):
                 print(event)
                 
                 if event.value == 1: #key pressed
+                    self.current_keys.remove(0)
                     if event.code == 1:
                         self.current_keys.append(keycode('a'))
                     elif event.code == 2:
