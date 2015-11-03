@@ -57,7 +57,7 @@ class USBKeyboardInterface(USBInterface):
         r, w, x = select(self.devices, [], [])
         for fd in r:
             for event in self.devices[fd].read():
-                if event.type != ecode.EV_KEY:
+                if event.type != ecodes.EV_KEY:
                     return
                 if event.code != 1 and event.code != 2:
                     return
