@@ -66,15 +66,15 @@ class USBKeyboardInterface(USBInterface):
                 if event.value == 1: #key pressed
                     self.current_keys.remove(0)
                     if event.code == 1:
-                        self.current_keys.append(keycode('a'))
+                        self.current_keys.append(4)
                     elif event.code == 2:
-                        self.current_keys.append(keycode('q'))
+                        self.current_keys.append(14)
     
                 else: #key released
                     if event.code == 1:
-                        self.current_keys.remove(keycode('a'))
+                        self.current_keys.remove(4)
                     elif event.code == 2:
-                        self.current_keys.remove(keycode('q'))
+                        self.current_keys.remove(14)
                 
                 if not self.current_keys:
                     self.current_keys = [0]
