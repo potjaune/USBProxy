@@ -48,43 +48,37 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        # "l<KEY UP>s<KEY UP><ENTER><KEY UP>"
-        #text = [ 0x0f, 0x00, 0x16, 0x00, 0x28, 0x00 ]
-        empty_preamble = [ chr(0x00) ] * 2
-
-        if text:
-            chars = list(text)
-        else:
-            chars = list(b"Hello there")
-        print(empty_preamble)
-        print(chars)
-        self.keys = empty_preamble + chars
         self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event1'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
+        self.current_keys = bytes([0])
 
     def handle_buffer_available(self):
         r, w, x = select(self.devices, [], [])
         for fd in r:
             for event in self.devices[fd].read():
+                if event.type != ecode.EV_KEY:
+                    return
+                if event.code != 1 and event.code != 2:
+                    return
                 print(event)
-                keycode = 0
-                if event.code == 1:
-                    keycode, mod = get_keycode('q')
-                    self.type_letter(keycode,mod)
-                elif event.code == 2:
-                    keycode, mod = get_keycode('a')
-                    self.type_letter(keycode,mod)
-                else:
-                    self.type_letter(0,0)
                 
-        if not self.keys:
-            return
-
-        letter = self.keys.pop(0)
-        keycode, mod = get_keycode(letter)
-        self.type_letter(keycode, mod)
-        self.type_letter(0, 0)
+                if event.value == 1: #key pressed
+                    if event.code == 1:
+                        self.current_keys.append(keycode('a'))
+                    elif event.code == 2:
+                        self.current_keys.append(keycode('q'))
+    
+                else: #key released
+                    if event.code == 1:
+                        self.current_keys.remove(keycode('a'))
+                    elif event.code == 2:
+                        self.current_keys.remove(keycode('q'))
+                
+                if not self.current_keys:
+                    self.current_keys = bytes([0])
+                
+                self.endpoint.send(bytes([0,0] + self.current_keys))
 
     def type_letter(self, keycode, modifiers=0):
         data = bytes([ modifiers, 0, keycode ])
