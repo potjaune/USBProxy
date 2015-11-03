@@ -48,7 +48,7 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        self.devices = map(InputDevice, ('/dev/input/event0'))
+        self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event0'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
