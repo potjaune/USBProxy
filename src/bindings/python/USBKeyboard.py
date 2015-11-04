@@ -49,7 +49,7 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
+        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
@@ -73,31 +73,98 @@ class USBKeyboardInterface(USBInterface):
         self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
 
     def handle_buffer_available(self):
+        
+        hackBrakes = 0
+        hackTimer = 0
+        hackGas = 0
+        
         r, w, x = select(self.devices, [], [])
         for fd in r:
             for event in self.devices[fd].read():
                 if event.type != ecodes.EV_KEY:
-                    return
+                    continue
                 if event.code == 3 and event.value != 1:
                     print("TODO: do a reset of the rate limiter")
-
+                    hackBrakes = 0
+                    hackGas = 0
+                    hackTimer = 0
+                    continue 
+                    
+                if event.code == 17 and event.value == 1: #increase hackTimer by 1 every 1 seconds
+                        hackTimer += 1
+                        
                 if event.code != 1 and event.code != 2:
-                    return
+                    continue
+                if event.code == 1 and event.value == 1: #brakes is pressed
+                    self.brakes_pressed = 1
+                if event.code == 1 and event.value == 0: #no brakes pressed
+                    self.brakes_pressed = 0
+                if event.code == 2 and event.value == 1: #throttle is pressed
+                    self.gas_pressed == 1
+                if event.code == 2 and event.value == 0: #no throttle pressed
+                    self.gas_pressed == 0
 
+                if hackTimer >= 120 : #reset timer and allow button presses after 120
+                    hackTimer = 0
+                    hackGas = 4
+                    hackBrakes = 4
+        
+                if self.brakes_pressed == 1 and hackBrakes > 0: #if brakes pressed and allowed to be so
+                    if 0 in self.current_keys:
+                        self.current_keys.remove(0)
+                    if not 0x4 in self.current_keys:
+                        self.current_keys.append(0x4)
+                        self.button1_status_led.write('255\n')
+                        self.button1_status_led.flush()
+                    if event.code == 17 and event.value == 1:
+                        hackBrakes -= 1
+        
+                if self.brakes_pressed == 0: 
+                    if 0x4 in self.current_keys:
+                        self.current_keys.remove(0x4)
+                        self.button1_status_led.write('0\n')
+                        self.button1_status_led.flush()
+                    if not self.current_keys:
+                        self.current_keys = [0]
+        
+                if self.gas_pressed == 1 and hackGas > 0: #if gas pressed and allowed to be so
+                    if 0 in self.current_keys:
+                        self.current_keys.remove(0)
+                    if not 0x14 in self.current_keys:
+                        self.current_keys.append(0x14)
+                        self.button2_status_led.write('255\n')
+                        self.button2_status_led.flush()
+                if event.code == 17 and event.value == 1:
+                        hackGas -= 1
+        
+                if self.gas_pressed == 0:
+                    if 0x14 in self.current_keys:
+                        self.current_keys.remove(0x14)
+                        self.button2_status_led.write('0\n')
+                        self.button2_status_led.flush()
+                    if not self.current_keys:
+                        self.current_keys = [0]
+"""            
                 if event.value == 1: #key pressed
                     if 0 in self.current_keys:
                         self.current_keys.remove(0)
-                    if event.code == 1:
+                    if event.code == 1 and hackBrakes > 0: #only disable brakes when hackBrake is not 0
                         if not 0x4 in self.current_keys:
                             self.current_keys.append(0x4)
                             self.button1_status_led.write('255\n')
                             self.button1_status_led.flush()
-                    elif event.code == 2:
+                            if event.code == 17: #decrease hackBrakes by 1 for every second until reaches 0
+                                if event.value == 1:
+                                    hackBrakes -= 1
+                    elif event.code == 2 and hackGas > 0: #only send throttle when hackGas is not 0
                         if not 0x14 in self.current_keys:
                             self.current_keys.append(0x14)
                             self.button2_status_led.write('255\n')
                             self.button2_status_led.flush()
-
+                            if event.code == 17:   #decrease hackGas by 1 for every second until reaches 0
+                                if event.value == 1:
+                                    hackGas -= 1
+                
                 else: #key released
                     if event.code == 1:
                         if 0x4 in self.current_keys:
@@ -109,10 +176,9 @@ class USBKeyboardInterface(USBInterface):
                             self.current_keys.remove(0x14)
                             self.button2_status_led.write('0\n')
                             self.button2_status_led.flush()
-
-                if not self.current_keys:
-                    self.current_keys = [0]
-
+                    if not self.current_keys:
+                        self.current_keys = [0]
+"""
                 self.endpoint.send(bytes([0,0] + self.current_keys + [0]*(6-len(self.current_keys)) ))
 
     def type_letter(self, keycode, modifiers=0):
