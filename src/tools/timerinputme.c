@@ -26,13 +26,12 @@ main(void)
     if(ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0)
         die("error: ioctl");
 
-    if(ioctl(fd, UI_SET_KEYBIT, 1))
+    if(ioctl(fd, UI_SET_KEYBIT, 17))
         die("error: ioctl");
-    if(ioctl(fd, UI_SET_KEYBIT, 2))
-        die("error: ioctl");
+    
 
     memset(&uidev, 0, sizeof(uidev));
-    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "uinputme");
+    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "timerinputme");
     uidev.id.bustype = BUS_USB;
     uidev.id.vendor  = 0x1;
     uidev.id.product = 0x1;
