@@ -15,7 +15,7 @@ class USBKeyboardInterface(USBInterface):
     name = "USB keyboard interface"
 
     hid_descriptor = b'\x09\x21\x10\x01\x00\x01\x22\x2b\x00'
-    report_descriptor = b'\x05\x01\x09\x06\xA1\x01\x05\x07\x19\xE0\x29\xE7\x15\x00\x25\x01\x75\x01\x95\x08\x81\x02\x95\x01\x75\x08\x81\x01\x19\x00\x29\x65\x15\x00\x25\x65\x75\x08\x95\x01\x81\x00\xC0'
+    report_descriptor = b'\x05\x01\x09\x06\xA1\x01\x05\x07\x19\xE0\x29\xE7\x15\x00\x25\x01\x75\x01\x95\x08\x81\x02\x95\x01\x75\x08\x81\x01\x19\x00\x29\x65\x15\x00\x25\x65\x75\x08\x95\x06\x81\x00\xC0'
 
     def __init__(self, verbose=0, text=None):
         descriptors = { 
@@ -65,26 +65,32 @@ class USBKeyboardInterface(USBInterface):
                 
                 if event.value == 1: #key pressed
                     if 0 in self.current_keys:
-                        self.current_keys.remove(0)
+                        #self.current_keys.remove(0)
+                        self.current_keys = [0]*2
                     if event.code == 1:
                         if not 0x4 in self.current_keys:
-                            self.current_keys.append(0x4)
+                            #self.current_keys.append(0x04)
+                            self.current_keys[0] = 0x04
                     elif event.code == 2:
                         if not 0x14 in self.current_keys:
-                            self.current_keys.append(0x14)
-    
+                            #self.current_keys.append(0x14)
+                            self.current_keys[1] = 0x14
+
                 else: #key released
                     if event.code == 1:
                         if 0x4 in self.current_keys:
-                            self.current_keys.remove(0x4)
+                            #self.current_keys.remove(0x4)
+                            self.current_keys[0] = 0
                     elif event.code == 2:
                         if 0x14 in self.current_keys:
-                            self.current_keys.remove(0x14)
+                            #self.current_keys.remove(0x14)
+                            self.current_keys[1] = 0
+
                 
                 if not self.current_keys:
                     self.current_keys = [0]
                 
-                self.endpoint.send(bytes([0,0] + self.current_keys))
+                self.endpoint.send(bytes([0,0] + self.current_keys + [0]*(6-len(self.current_keys)) ))
 
     def type_letter(self, keycode, modifiers=0):
         data = bytes([ modifiers, 0, keycode ])
