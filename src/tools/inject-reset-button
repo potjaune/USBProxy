@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+import sys, os
+
+path='/dev/input/event0'
+os.chmod(path, 666)
+event_file = open(path,'w')
+
+#NB: valid layout on BBB -- not on x64 
+#int timestamp (1), int timestamp (2), short type, short code, int value -- all LSB
+
+#press key 3
+event_file.write("\x00"*4+"\x00"*4+"\x01\x00"+"\x03\x00"+"\x01\x00\x00\x00")
+#release key 3
+event_file.write("\x00"*4+"\x00"*4+"\x01\x00"+"\x03\x00"+"\x00\x00\x00\x00")
+#send syn report
+event_file.write("\x00"*4+"\x00"*4+"\x00\x00"+"\x00\x00"+"\x00\x00\x00\x00")
+

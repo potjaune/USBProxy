@@ -10,6 +10,7 @@ from USBEndpoint import *
 from keymap import get_keycode
 from evdev import InputDevice, categorize, ecodes
 from select import select
+import os
 
 class USBKeyboardInterface(USBInterface):
     name = "USB keyboard interface"
@@ -48,10 +49,28 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
+        self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event0'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
+
+        #clear all the LEDs
+        for ledpath in os.listdir('/sys/class/leds/'):
+            contents = open('/sys/class/leds/' + ledpath + '/trigger', 'w')
+            contents.write('none\n');
+            contents.close()
+            contents = open('/sys/class/leds/' + ledpath + '/brightness', 'w')
+            contents.write('0\n')
+            contents.close()
+
+        #TODO
+        #self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
+        self.button1_rate_led = open('/sqays/class/leds/beaglebone:green:usr3/brightness', 'w')
+        self.button1_status_led = open('/sys/class/leds/beaglebone:green:usr2/brightness', 'w')
+        self.button2_status_led = open('/sys/class/leds/beaglebone:green:mmc0/brightness', 'w')
+        #TODO
+        #self.button2_rate_led = open('/sys/class/leds/switch:green:led_B/brightness', 'w')
+        self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
 
     def handle_buffer_available(self):
         r, w, x = select(self.devices, [], [])
@@ -59,31 +78,41 @@ class USBKeyboardInterface(USBInterface):
             for event in self.devices[fd].read():
                 if event.type != ecodes.EV_KEY:
                     return
+                if event.code == 3 and event.value != 1:
+                    print("TODO: do a reset of the rate limiter")
+
                 if event.code != 1 and event.code != 2:
                     return
-                print(event)
-                
+
                 if event.value == 1: #key pressed
                     if 0 in self.current_keys:
                         self.current_keys.remove(0)
                     if event.code == 1:
                         if not 0x4 in self.current_keys:
                             self.current_keys.append(0x4)
+                            self.button1_status_led.write('255\n')
+                            self.button1_status_led.flush()
                     elif event.code == 2:
                         if not 0x14 in self.current_keys:
                             self.current_keys.append(0x14)
-    
+                            self.button2_status_led.write('255\n')
+                            self.button2_status_led.flush()
+
                 else: #key released
                     if event.code == 1:
                         if 0x4 in self.current_keys:
                             self.current_keys.remove(0x4)
+                            self.button1_status_led.write('0\n')
+                            self.button1_status_led.flush()
                     elif event.code == 2:
                         if 0x14 in self.current_keys:
                             self.current_keys.remove(0x14)
-                
+                            self.button2_status_led.write('0\n')
+                            self.button2_status_led.flush()
+
                 if not self.current_keys:
                     self.current_keys = [0]
-                
+
                 self.endpoint.send(bytes([0,0] + self.current_keys + [0]*(6-len(self.current_keys)) ))
 
     def type_letter(self, keycode, modifiers=0):

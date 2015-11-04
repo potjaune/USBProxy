@@ -30,6 +30,8 @@ main(void)
         die("error: ioctl");
     if(ioctl(fd, UI_SET_KEYBIT, 2))
         die("error: ioctl");
+    if(ioctl(fd, UI_SET_KEYBIT, 3))
+        die("error: ioctl");
 
     memset(&uidev, 0, sizeof(uidev));
     snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "uinputme");
