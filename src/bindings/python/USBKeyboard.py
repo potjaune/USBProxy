@@ -49,7 +49,7 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        self.devices = map(InputDevice, ('/dev/input/event0', '/dev/input/event0'))
+        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
@@ -65,7 +65,7 @@ class USBKeyboardInterface(USBInterface):
 
         #TODO
         #self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
-        self.button1_rate_led = open('/sqays/class/leds/beaglebone:green:usr3/brightness', 'w')
+        self.button1_rate_led = open('/sys/class/leds/beaglebone:green:usr3/brightness', 'w')
         self.button1_status_led = open('/sys/class/leds/beaglebone:green:usr2/brightness', 'w')
         self.button2_status_led = open('/sys/class/leds/beaglebone:green:mmc0/brightness', 'w')
         #TODO
