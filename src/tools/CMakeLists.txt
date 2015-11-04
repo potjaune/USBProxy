@@ -14,3 +14,6 @@ install(TARGETS ${TOOL} RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 
 add_executable(uinputme uinputme.c)
 install(TARGETS uinputme RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
+
+add_executable(timerinputme timerinputme.c)
+install(TARGETS timerinputme RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
