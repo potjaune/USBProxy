@@ -72,114 +72,111 @@ class USBKeyboardInterface(USBInterface):
         #self.button2_rate_led = open('/sys/class/leds/switch:green:led_B/brightness', 'w')
         self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
 
+        self.brakes_pressed = 0
+        self.gas_pressed = 0
+        self.reset_limiter()
+
+        self.last_send_was_nil = 0
+
+    def reset_limiter(self):
+        self.hackBrakes = 4
+        self.hackGas = 4
+        self.hackTimer = 0
+
+    def update_rate_limiter_leds(self):
+        if self.hackBrakes > 0:
+            self.button1_rate_led.write('255\n')
+        else:
+            self.button1_rate_led.write('0\n')
+        self.button1_rate_led.flush()
+
+        if self.hackGas > 0:
+            self.button2_rate_led.write('255\n')
+        else:
+            self.button2_rate_led.write('0\n')
+        self.button2_rate_led.flush()
+
     def handle_buffer_available(self):
-        
-        hackBrakes = 0
-        hackTimer = 0
-        hackGas = 0
-        
         r, w, x = select(self.devices, [], [])
         for fd in r:
             for event in self.devices[fd].read():
                 if event.type != ecodes.EV_KEY:
                     continue
+
                 if event.code == 3 and event.value != 1:
-                    print("TODO: do a reset of the rate limiter")
-                    hackBrakes = 0
-                    hackGas = 0
-                    hackTimer = 0
-                    continue 
-                    
-                if event.code == 17 and event.value == 1: #increase hackTimer by 1 every 1 seconds
-                        hackTimer += 1
-                        
+                    print("reset of the rate limiter")
+                    self.reset_limiter()
+                    self.update_rate_limiter_leds()
+
+                    if self.brakes_pressed == 1 or self.gas_pressed == 1:
+                        self.rate_limit()
+                        return #always return after writing a packet
+                    continue
+
+                if event.code == 17 and event.value == 1: #17 co-opted for timer events in our select() loop
+                    self.hackTimer += 1 #increase hackTimer by 1 every 1 seconds
+
+                    if self.hackTimer >= 120 : #reset timer and allow button presses after 120
+                        self.reset_limiter()
+
+                    #TODO: either poll more frequently or measure time elapsed between code 1 and 2 keypresses to better measure the use of the buttons
+                    if self.gas_pressed == 1:
+                        self.hackGas -= 1
+                    if self.brakes_pressed == 1:
+                        self.hackBrakes -= 1
+
+                    self.update_rate_limiter_leds()
+
+                    if (
+                            (self.hackBrakes == 0 and self.brakes_pressed == 1)
+                            or (self.hackGas == 0 and self.gas_pressed == 1)
+                            or (self.hackTimer == 0 and (self.brakes_pressed == 1 or self.gas_pressed == 1))
+                        ):
+                        #handle edge-transitions
+                        self.rate_limit()
+                        return #always return after writing a packet
+                    continue
+
                 if event.code != 1 and event.code != 2:
                     continue
-                if event.code == 1 and event.value == 1: #brakes is pressed
-                    self.brakes_pressed = 1
-                if event.code == 1 and event.value == 0: #no brakes pressed
-                    self.brakes_pressed = 0
-                if event.code == 2 and event.value == 1: #throttle is pressed
-                    self.gas_pressed == 1
-                if event.code == 2 and event.value == 0: #no throttle pressed
-                    self.gas_pressed == 0
 
-                if hackTimer >= 120 : #reset timer and allow button presses after 120
-                    hackTimer = 0
-                    hackGas = 4
-                    hackBrakes = 4
-        
-                if self.brakes_pressed == 1 and hackBrakes > 0: #if brakes pressed and allowed to be so
-                    if 0 in self.current_keys:
-                        self.current_keys.remove(0)
-                    if not 0x4 in self.current_keys:
-                        self.current_keys.append(0x4)
+                if event.code == 1:
+                    self.brakes_pressed = event.value
+                    #TODO collect time spent with brakes_pressed == 1; otherwise short keypresses aren't tracked in time event above
+                    if self.brakes_pressed == 1:
                         self.button1_status_led.write('255\n')
-                        self.button1_status_led.flush()
-                    if event.code == 17 and event.value == 1:
-                        hackBrakes -= 1
-        
-                if self.brakes_pressed == 0: 
-                    if 0x4 in self.current_keys:
-                        self.current_keys.remove(0x4)
+                    else:
                         self.button1_status_led.write('0\n')
-                        self.button1_status_led.flush()
-                    if not self.current_keys:
-                        self.current_keys = [0]
-        
-                if self.gas_pressed == 1 and hackGas > 0: #if gas pressed and allowed to be so
-                    if 0 in self.current_keys:
-                        self.current_keys.remove(0)
-                    if not 0x14 in self.current_keys:
-                        self.current_keys.append(0x14)
+                    self.button1_status_led.flush()
+
+                if event.code == 2:
+                    self.gas_pressed = event.value
+                    #TODO collect time spent with gas_pressed == 1 ; other short keypresses aren't tracked int timer events above
+                    if self.gas_pressed == 1:
                         self.button2_status_led.write('255\n')
-                        self.button2_status_led.flush()
-                if event.code == 17 and event.value == 1:
-                        hackGas -= 1
-        
-                if self.gas_pressed == 0:
-                    if 0x14 in self.current_keys:
-                        self.current_keys.remove(0x14)
+                    else:
                         self.button2_status_led.write('0\n')
-                        self.button2_status_led.flush()
-                    if not self.current_keys:
-                        self.current_keys = [0]
-"""            
-                if event.value == 1: #key pressed
-                    if 0 in self.current_keys:
-                        self.current_keys.remove(0)
-                    if event.code == 1 and hackBrakes > 0: #only disable brakes when hackBrake is not 0
-                        if not 0x4 in self.current_keys:
-                            self.current_keys.append(0x4)
-                            self.button1_status_led.write('255\n')
-                            self.button1_status_led.flush()
-                            if event.code == 17: #decrease hackBrakes by 1 for every second until reaches 0
-                                if event.value == 1:
-                                    hackBrakes -= 1
-                    elif event.code == 2 and hackGas > 0: #only send throttle when hackGas is not 0
-                        if not 0x14 in self.current_keys:
-                            self.current_keys.append(0x14)
-                            self.button2_status_led.write('255\n')
-                            self.button2_status_led.flush()
-                            if event.code == 17:   #decrease hackGas by 1 for every second until reaches 0
-                                if event.value == 1:
-                                    hackGas -= 1
-                
-                else: #key released
-                    if event.code == 1:
-                        if 0x4 in self.current_keys:
-                            self.current_keys.remove(0x4)
-                            self.button1_status_led.write('0\n')
-                            self.button1_status_led.flush()
-                    elif event.code == 2:
-                        if 0x14 in self.current_keys:
-                            self.current_keys.remove(0x14)
-                            self.button2_status_led.write('0\n')
-                            self.button2_status_led.flush()
-                    if not self.current_keys:
-                        self.current_keys = [0]
-"""
-                self.endpoint.send(bytes([0,0] + self.current_keys + [0]*(6-len(self.current_keys)) ))
+                    self.button2_status_led.flush()
+
+                self.rate_limit()
+                return #always return after writing a packet
+
+    def rate_limit(self):
+        send_keys = []
+        if self.brakes_pressed == 1 and self.hackBrakes > 0: #if brakes pressed and allowed to be so
+            send_keys.append(0x4)
+
+        if self.gas_pressed == 1 and self.hackGas > 0: #if gas pressed and allowed to be so
+            send_keys.append(0x14)
+
+        if not send_keys:
+            if self.last_send_was_nil == 1:
+                return
+            self.last_send_was_nil = 1
+        else:
+            self.last_send_was_nil = 0
+
+        self.endpoint.send(bytes([0,0] + send_keys + [0]*(6-len(send_keys)) ))
 
     def type_letter(self, keycode, modifiers=0):
         data = bytes([ modifiers, 0, keycode ])
