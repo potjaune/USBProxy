@@ -48,28 +48,19 @@ main(void)
     memset(&report, 0, sizeof(struct input_event));
     ev.type = EV_SYN;
     ev.code = SYN_REPORT;
-
+    memset(&ev, 0, sizeof(struct input_event));
+    ev.type = EV_KEY;
+    ev.code = 17;
     while(1) {
-	memset(&ev, 0, sizeof(struct input_event));
-	ev.type = EV_KEY;
-	ev.code = 17;
 	ev.value = 1;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");
-	if(write(fd, &report, sizeof(struct input_event)) < 0)
-		die("error: write syn");
-	sleep(1);
-
-	memset(&ev, 0, sizeof(struct input_event));
-	ev.type = EV_KEY;
-	ev.code = 17;
 	ev.value = 0;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");
 	if(write(fd, &report, sizeof(struct input_event)) < 0)
 		die("error: write syn");
 	sleep(1);
-
     }
 
     sleep(2);
