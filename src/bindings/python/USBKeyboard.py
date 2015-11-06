@@ -66,6 +66,8 @@ class USBKeyboardInterface(USBInterface):
         #arduino led tubes
         #TODO: run stty to set 115200,sane
         self.led_tubes_pipe = open('/dev/ttyUSB0', 'w')
+        self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
+        self.MAX_TUBE_SECONDS = 5.0
 
         #TODO
         #self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
@@ -95,6 +97,8 @@ class USBKeyboardInterface(USBInterface):
         self.hackGas += 5 #5 seconds of gas
         self.hackTimer = 0
 
+    FLAG_AUTO_DEMO_MODE = ord(b'\x02')
+    FLAG_TUBE1 = ord(b'\x08')
     def update_rate_limiter_leds(self):
         if self.hackBrakes > 0:
             self.button1_rate_led.write('255\n')
@@ -102,9 +106,10 @@ class USBKeyboardInterface(USBInterface):
             self.button1_rate_led.write('0\n')
         self.button1_rate_led.flush()
 
-        tubeval = max(0,min(5,self.hackBrakes))
-        tubeval = tubeval/5*85
-        self.led_tubes_pipe.write('t%d,' % tubeval)
+        tubeval = max(0,min(5.0,self.hackBrakes))
+        tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
+        tubeval |= FLAG_AUTO_DEMO_MODE | FLAG_TUBE1
+        self.led_tubes_pipe.write(chr(tubeval))
         #the tubes are flushed by this command below: self.led_tubes_pipe.flush()
 
         if self.hackGas > 0:
@@ -113,9 +118,10 @@ class USBKeyboardInterface(USBInterface):
             self.button2_rate_led.write('0\n')
         self.button2_rate_led.flush()
 
-        tubeval = max(0,min(5,self.hackGas)
-        tubeval = tubeval/5*85
-        self.led_tubes_pipe.write('T%d,' % tubeval)
+        tubeval = max(0,min(5.0,self.hackGas))
+        tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
+        tubeval |= FLAG_AUTO_DEMO_MODE
+        self.led_tubes_pipe.write(chr(tubeval))
 
         self.led_tubes_pipe.flush()
 
