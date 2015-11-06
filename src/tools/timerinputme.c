@@ -46,8 +46,8 @@ main(void)
     sleep(2);
 
     memset(&report, 0, sizeof(struct input_event));
-    ev.type = EV_SYN;
-    ev.code = SYN_REPORT;
+    report.type = EV_SYN;
+    report.code = SYN_REPORT;
     memset(&ev, 0, sizeof(struct input_event));
     ev.type = EV_KEY;
     ev.code = 17;
