@@ -1,0 +1,10 @@
+#!/bin/bash
+#press a
+echo -ne "\x04\x00\x00\x00\x00\x00" > /dev/udp/localhost/32008
+#also works, but results in long keypress due to -q1 one second delay on exit
+#echo -ne "\x04\x00\x00\x00\x00\x00" | nc localhost -q 1 -u 32008
+
+#release a
+echo -ne "\x00" | nc localhost -q 1 -u 32008
+#also works
+#echo -ne "\x00" > /dev/udp/localhost/32008

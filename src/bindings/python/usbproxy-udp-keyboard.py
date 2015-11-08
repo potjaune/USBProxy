@@ -7,7 +7,7 @@ from UDPKeyboard import UDPKeyboardDevice
 import sys
 
 u = USBProxyApp(verbose=0)
-d = USBKeyboardDevice(u, verbose=0, text='')
+d = UDPKeyboardDevice(u, verbose=0)
 
 d.connect()
 
