@@ -1,4 +1,4 @@
-# USBKeyboard.py
+# UDPKeyboard.py
 #
 # Contains class definitions to implement a USB keyboard.
 
@@ -12,7 +12,7 @@ from evdev import InputDevice, categorize, ecodes
 from select import select
 import os
 
-class USBKeyboardInterface(USBInterface):
+class UDPKeyboardInterface(USBInterface):
     name = "USB keyboard interface"
 
     hid_descriptor = b'\x09\x21\x10\x01\x00\x01\x22\x2b\x00'
@@ -248,14 +248,14 @@ class USBKeyboardInterface(USBInterface):
         self.endpoint.send(data)
 
 
-class USBKeyboardDevice(USBDevice):
+class UDPKeyboardDevice(USBDevice):
     name = "USB keyboard device"
 
     def __init__(self, maxusb_app, verbose=0, text=None):
         config = USBConfiguration(
                 1,                                          # index
                 "Emulated Keyboard",    # string desc
-                [ USBKeyboardInterface(text=text) ]         # interfaces
+                [ UDPKeyboardInterface(text=text) ]         # interfaces
         )
 
         USBDevice.__init__(

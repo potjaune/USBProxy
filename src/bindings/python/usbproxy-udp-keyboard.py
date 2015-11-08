@@ -3,17 +3,11 @@
 # usbproxy-fd-keyboard.py
 
 from USBProxyApp import USBProxyApp
-from USBKeyboard import USBKeyboardDevice
+from UDPKeyboard import UDPKeyboardDevice
 import sys
 
-u = USBProxyApp(verbose=1)
-
-if len(sys.argv) > 1:
-    text = ' '.join(sys.argv[1:])
-else:
-    text = None
-print(text)
-d = USBKeyboardDevice(u, verbose=4, text=text)
+u = USBProxyApp(verbose=0)
+d = USBKeyboardDevice(u, verbose=0, text='')
 
 d.connect()
 
