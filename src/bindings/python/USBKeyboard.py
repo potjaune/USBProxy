@@ -83,6 +83,8 @@ class USBKeyboardInterface(USBInterface):
         self.gas_last_timestamp = -1
         self.reset_limiter()
 
+        #KEYCODE_BRAKESOFF and KEYCODE_GAS are rate-limited; all other valid keyboard keycodes are passed-through
+        self.passthru_keys = []
         self.last_send_was_nil = 0
 
     def reset_limiter(self):
@@ -108,8 +110,8 @@ class USBKeyboardInterface(USBInterface):
 
     global KEYCODE_TIMER
     global KEYCODE_RESET
-    KEYCODE_TIMER = 0x1 #not sent-along; so use a value outside of valid keyboard scan codes
-    KEYCODE_RESET = 0x3 #not sent-along; so use a value outside of valid keyboard scan codes
+    KEYCODE_TIMER = 0x01 #not sent-along; so use a value outside of valid keyboard scan codes
+    KEYCODE_RESET = 0x03 #not sent-along; so use a value outside of valid keyboard scan codes
 
     def update_rate_limiter_leds(self):
         if self.hackBrakes > 0:
@@ -129,7 +131,6 @@ class USBKeyboardInterface(USBInterface):
         else:
             self.button2_rate_led.write('0\n')
         self.button2_rate_led.flush()
-        print(bytes([tubeval]) )
 
         tubeval = max(0,min(5.0,self.hackGas))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
@@ -144,7 +145,9 @@ class USBKeyboardInterface(USBInterface):
                 if event.type != ecodes.EV_KEY:
                     continue
 
-                if event.code == KEYCODE_RESET and event.value != 1:
+                if event.code == KEYCODE_RESET:
+                    if event.value != 1:
+                        continue
                     print("reset of the rate limiter")
                     self.reset_limiter()
                     self.update_rate_limiter_leds()
@@ -154,7 +157,9 @@ class USBKeyboardInterface(USBInterface):
                         return #always return after writing a packet
                     continue
 
-                if event.code == KEYCODE_TIMER and event.value == 1: #17 co-opted for timer events in our select() loop
+                if event.code == KEYCODE_TIMER: #0x1 co-opted for timer events in our select() loop
+                    if event.value != 1:
+                        continue
                     if self.last_timer_timestamp > 0:
                         self.hackTimer += event.timestamp() - self.last_timer_timestamp #increase hackTimer by timer period
                     self.last_timer_timestamp = event.timestamp()
@@ -177,8 +182,20 @@ class USBKeyboardInterface(USBInterface):
                         return #always return after writing a packet
                     continue
 
-                if event.code != KEYCODE_BRAKESOFF and event.code != KEYCODE_GAS:
+                if event.code < 4 or event.code > 255: #skip any other invalid keyboard scancodes
+                    print("skipping invalid scancode %d" % event.code)
                     continue
+
+                if event.code != KEYCODE_BRAKESOFF and event.code != KEYCODE_GAS: #pass-through any other scancodes
+                    if event.value == 1 and len(self.passthru_keys) < 4: #leave enough room for gas and brake suppression
+                        print("pass-through of scancode %d" % event.code)
+                        self.passthru_keys.append(event.code)
+                    else:
+                        #NB: removes the first value -- not all values
+                        self.passthru_keys.remove(event.code)
+
+                    self.rate_limit()
+                    return #always return after writing a packet
 
                 if event.code == KEYCODE_BRAKESOFF:
                     self.update_hackBrakes(event)
@@ -227,14 +244,14 @@ class USBKeyboardInterface(USBInterface):
         if self.gas_pressed == 1 and self.hackGas > 0: #if gas pressed and allowed to be so
             send_keys.append(KEYCODE_GAS)
 
-        if not send_keys:
+        if not send_keys and not self.passthru_keys:
             if self.last_send_was_nil == 1:
                 return
             self.last_send_was_nil = 1
         else:
             self.last_send_was_nil = 0
 
-        self.endpoint.send(bytes([0,0] + send_keys + [0]*(6-len(send_keys)) ))
+        self.endpoint.send(bytes([0,0] + send_keys + self.passthru_keys + [0]*(6-len(send_keys)-len(self.passthru_keys))))
 
 class USBKeyboardDevice(USBDevice):
     name = "USB keyboard device"
