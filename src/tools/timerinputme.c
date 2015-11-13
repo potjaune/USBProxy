@@ -12,6 +12,8 @@
         exit(EXIT_FAILURE); \
     } while(0)
 
+#define KEYCODE_TIMER 0x1
+
 int
 main(void)
 {
@@ -26,7 +28,7 @@ main(void)
     if(ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0)
         die("error: ioctl");
 
-    if(ioctl(fd, UI_SET_KEYBIT, 17))
+    if(ioctl(fd, UI_SET_KEYBIT, KEYCODE_TIMER))
         die("error: ioctl");
     
 
@@ -50,7 +52,7 @@ main(void)
     report.code = SYN_REPORT;
     memset(&ev, 0, sizeof(struct input_event));
     ev.type = EV_KEY;
-    ev.code = 17;
+    ev.code = KEYCODE_TIMER;
     while(1) {
 	ev.value = 1;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)

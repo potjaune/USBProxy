@@ -12,6 +12,10 @@
         exit(EXIT_FAILURE); \
     } while(0)
 
+#define KEYCODE_GAS 0x04
+#define KEYCODE_BRAKESOFF 0x14
+#define KEYCODE_RESET 0x3
+
 int
 main(void)
 {
@@ -26,11 +30,11 @@ main(void)
     if(ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0)
         die("error: ioctl");
 
-    if(ioctl(fd, UI_SET_KEYBIT, 1))
+    if(ioctl(fd, UI_SET_KEYBIT, KEYCODE_BRAKESOFF))
         die("error: ioctl");
-    if(ioctl(fd, UI_SET_KEYBIT, 2))
+    if(ioctl(fd, UI_SET_KEYBIT, KEYCODE_GAS))
         die("error: ioctl");
-    if(ioctl(fd, UI_SET_KEYBIT, 3))
+    if(ioctl(fd, UI_SET_KEYBIT, KEYCODE_RESET))
         die("error: ioctl");
 
     memset(&uidev, 0, sizeof(uidev));
@@ -55,7 +59,7 @@ main(void)
     while(1) {
 	memset(&ev, 0, sizeof(struct input_event));
 	ev.type = EV_KEY;
-	ev.code = 1;
+	ev.code = KEYCODE_BRAKESOFF;
 	ev.value = 1;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");
@@ -65,7 +69,7 @@ main(void)
 
 	memset(&ev, 0, sizeof(struct input_event));
 	ev.type = EV_KEY;
-	ev.code = 1;
+	ev.code = KEYCODE_BRAKESOFF;
 	ev.value = 0;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");
@@ -75,7 +79,7 @@ main(void)
 
 	memset(&ev, 0, sizeof(struct input_event));
 	ev.type = EV_KEY;
-	ev.code = 2;
+	ev.code = KEYCODE_GAS;
 	ev.value = 1;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");
@@ -85,7 +89,7 @@ main(void)
 
 	memset(&ev, 0, sizeof(struct input_event));
 	ev.type = EV_KEY;
-	ev.code = 2;
+	ev.code = KEYCODE_GAS;
 	ev.value = 0;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)
 		die("error: write");

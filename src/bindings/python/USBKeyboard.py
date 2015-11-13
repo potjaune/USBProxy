@@ -101,6 +101,16 @@ class USBKeyboardInterface(USBInterface):
     FLAG_AUTO_DEMO_MODE = ord(b'\x20')
     FLAG_TUBE1 = ord(b'\x80')
 
+    global KEYCODE_GAS
+    global KEYCODE_BRAKESOFF
+    KEYCODE_GAS = 0x04 #a
+    KEYCODE_BRAKESOFF = 0x14 #q
+
+    global KEYCODE_TIMER
+    global KEYCODE_RESET
+    KEYCODE_TIMER = 0x1 #not sent-along; so use a value outside of valid keyboard scan codes
+    KEYCODE_RESET = 0x3 #not sent-along; so use a value outside of valid keyboard scan codes
+
     def update_rate_limiter_leds(self):
         if self.hackBrakes > 0:
             self.button1_rate_led.write('255\n')
@@ -134,7 +144,7 @@ class USBKeyboardInterface(USBInterface):
                 if event.type != ecodes.EV_KEY:
                     continue
 
-                if event.code == 3 and event.value != 1:
+                if event.code == KEYCODE_RESET and event.value != 1:
                     print("reset of the rate limiter")
                     self.reset_limiter()
                     self.update_rate_limiter_leds()
@@ -144,7 +154,7 @@ class USBKeyboardInterface(USBInterface):
                         return #always return after writing a packet
                     continue
 
-                if event.code == 17 and event.value == 1: #17 co-opted for timer events in our select() loop
+                if event.code == KEYCODE_TIMER and event.value == 1: #17 co-opted for timer events in our select() loop
                     if self.last_timer_timestamp > 0:
                         self.hackTimer += event.timestamp() - self.last_timer_timestamp #increase hackTimer by timer period
                     self.last_timer_timestamp = event.timestamp()
@@ -167,10 +177,10 @@ class USBKeyboardInterface(USBInterface):
                         return #always return after writing a packet
                     continue
 
-                if event.code != 1 and event.code != 2:
+                if event.code != KEYCODE_BRAKESOFF and event.code != KEYCODE_GAS:
                     continue
 
-                if event.code == 1:
+                if event.code == KEYCODE_BRAKESOFF:
                     self.update_hackBrakes(event)
                     self.brakes_pressed = event.value
 
@@ -180,7 +190,7 @@ class USBKeyboardInterface(USBInterface):
                         self.button1_status_led.write('0\n')
                     self.button1_status_led.flush()
 
-                if event.code == 2:
+                if event.code == KEYCODE_GAS:
                     self.update_hackGas(event)
                     self.gas_pressed = event.value
 
@@ -212,10 +222,10 @@ class USBKeyboardInterface(USBInterface):
     def rate_limit(self):
         send_keys = []
         if self.brakes_pressed == 1 and self.hackBrakes > 0: #if brakes pressed and allowed to be so
-            send_keys.append(0x4)
+            send_keys.append(KEYCODE_BRAKESOFF)
 
         if self.gas_pressed == 1 and self.hackGas > 0: #if gas pressed and allowed to be so
-            send_keys.append(0x14)
+            send_keys.append(KEYCODE_GAS)
 
         if not send_keys:
             if self.last_send_was_nil == 1:
