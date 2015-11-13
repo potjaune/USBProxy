@@ -111,11 +111,6 @@ class USBKeyboardInterface(USBInterface):
         tubeval = max(0,min(5.0,self.hackBrakes))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
         tubeval |= FLAG_AUTO_DEMO_MODE | FLAG_TUBE1
-        print("DEC:%d" % tubeval )
-        print("HEX1:")
-        print(bytes([tubeval]) )
-        print("CHAR:[%s]\n" % chr(tubeval))
-        #self.led_tubes_pipe.write(chr(tubeval))
         self.led_tubes_pipe.write(bytes([tubeval]))
         #the tubes are flushed by this command below: self.led_tubes_pipe.flush()
 
@@ -128,15 +123,8 @@ class USBKeyboardInterface(USBInterface):
 
         tubeval = max(0,min(5.0,self.hackGas))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
-        print(bytes([tubeval]) )
         tubeval |= FLAG_AUTO_DEMO_MODE
-        print("DEC:%d" % tubeval )
-        print("HEX2:")
-        print(bytes([tubeval]) )
-        print("CHAR:[%s]\n" % chr(tubeval))
-        #self.led_tubes_pipe.write(chr(tubeval))
         self.led_tubes_pipe.write(bytes([tubeval]))
-        print(bytes([tubeval]) )
         self.led_tubes_pipe.flush()
 
     def handle_buffer_available(self):
@@ -237,15 +225,6 @@ class USBKeyboardInterface(USBInterface):
             self.last_send_was_nil = 0
 
         self.endpoint.send(bytes([0,0] + send_keys + [0]*(6-len(send_keys)) ))
-
-    def type_letter(self, keycode, modifiers=0):
-        data = bytes([ modifiers, 0, keycode ])
-
-        if self.verbose > 2:
-            print(self.name, "sending keypress 0x%02x" % keycode)
-
-        self.endpoint.send(data)
-
 
 class USBKeyboardDevice(USBDevice):
     name = "USB keyboard device"
