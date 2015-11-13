@@ -17,7 +17,7 @@
 int
 main(void)
 {
-    int                    fd;
+    int                    fd, i;
     struct uinput_user_dev uidev;
     struct input_event     ev, report;
 
@@ -28,9 +28,12 @@ main(void)
     if(ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0)
         die("error: ioctl");
 
-    if(ioctl(fd, UI_SET_KEYBIT, KEYCODE_TIMER))
-        die("error: ioctl");
-    
+    /* Allow all keycodes -- makes injecting from other processes simpler*/
+    for(i=0; i<256; i++)
+    {
+	if(ioctl(fd, UI_SET_KEYBIT, i))
+	    die("error: ioctl");
+    }
 
     memset(&uidev, 0, sizeof(uidev));
     snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "timerinputme");
