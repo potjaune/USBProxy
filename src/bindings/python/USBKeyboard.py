@@ -49,7 +49,7 @@ class USBKeyboardInterface(USBInterface):
                 descriptors
         )
 
-        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
+        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0','/dev/input/event2))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
@@ -140,7 +140,7 @@ class USBKeyboardInterface(USBInterface):
                 if event.code != 1 and event.code != 2:
                     continue
 
-                if event.code == 1:
+                if event.code == 1 or event.code == 273:
                     self.brakes_pressed = event.value
                     #TODO collect time spent with brakes_pressed == 1; otherwise short keypresses aren't tracked in time event above
                     if self.brakes_pressed == 1:
@@ -149,7 +149,7 @@ class USBKeyboardInterface(USBInterface):
                         self.button1_status_led.write('0\n')
                     self.button1_status_led.flush()
 
-                if event.code == 2:
+                if event.code == 2 or event.code == 272:
                     self.gas_pressed = event.value
                     #TODO collect time spent with gas_pressed == 1 ; other short keypresses aren't tracked int timer events above
                     if self.gas_pressed == 1:
@@ -157,7 +157,7 @@ class USBKeyboardInterface(USBInterface):
                     else:
                         self.button2_status_led.write('0\n')
                     self.button2_status_led.flush()
-
+                
                 self.rate_limit()
                 return #always return after writing a packet
 
