@@ -82,6 +82,11 @@ class USBKeyboardInterface(USBInterface):
         self.hackBrakes = 5 #5 seconds of brakes
         self.hackGas = 5 #5 seconds of gas
         self.hackTimer = 0
+    
+    def add_limiter(self):
+        self.hackBrakes += 5
+        self.hackGas += 5 #5 seconds of gas
+        self.hackTimer = 0
 
     def update_rate_limiter_leds(self):
         if self.hackBrakes > 0:
@@ -117,7 +122,7 @@ class USBKeyboardInterface(USBInterface):
                     self.hackTimer += 1 #increase hackTimer by 1 every 1 seconds
 
                     if self.hackTimer >= 120 : #reset timer and allow button presses after 120
-                        self.reset_limiter()
+                        self.add_limiter()
 
                     #TODO: either poll more frequently or measure time elapsed between code 1 and 2 keypresses to better measure the use of the buttons
                     if self.gas_pressed == 1:
