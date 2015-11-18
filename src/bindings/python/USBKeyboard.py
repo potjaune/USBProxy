@@ -74,6 +74,8 @@ class USBKeyboardInterface(USBInterface):
 
         self.brakes_pressed = 0
         self.gas_pressed = 0
+        self.brakes_last_timestamp = -1
+        self.gas_last_timestamp = -1
         self.reset_limiter()
 
         self.last_send_was_nil = 0
@@ -82,7 +84,8 @@ class USBKeyboardInterface(USBInterface):
         self.hackBrakes = 5 #5 seconds of brakes
         self.hackGas = 5 #5 seconds of gas
         self.hackTimer = 0
-    
+        self.last_timer_timestamp = -1
+
     def add_limiter(self):
         self.hackBrakes += 5
         self.hackGas += 5 #5 seconds of gas
@@ -119,22 +122,21 @@ class USBKeyboardInterface(USBInterface):
                     continue
 
                 if event.code == 17 and event.value == 1: #17 co-opted for timer events in our select() loop
-                    self.hackTimer += 1 #increase hackTimer by 1 every 1 seconds
+                    if self.last_timer_timestamp > 0:
+                        self.hackTimer += event.timestamp() - self.last_timer_timestamp #increase hackTimer by timer period
+                    self.last_timer_timestamp = event.timestamp()
 
                     if self.hackTimer >= 120 : #reset timer and allow button presses after 120
                         self.add_limiter()
 
-                    #TODO: either poll more frequently or measure time elapsed between code 1 and 2 keypresses to better measure the use of the buttons
-                    if self.gas_pressed == 1:
-                        self.hackGas -= 1
-                    if self.brakes_pressed == 1:
-                        self.hackBrakes -= 1
+                    self.update_hackBrakes(event)
+                    self.update_hackGas(event)
 
                     self.update_rate_limiter_leds()
 
                     if (
-                            (self.hackBrakes == 0 and self.brakes_pressed == 1)
-                            or (self.hackGas == 0 and self.gas_pressed == 1)
+                            (self.hackBrakes <= 0 and self.brakes_pressed == 1)
+                            or (self.hackGas <= 0 and self.gas_pressed == 1)
                             or (self.hackTimer == 0 and (self.brakes_pressed == 1 or self.gas_pressed == 1))
                         ):
                         #handle edge-transitions
@@ -146,8 +148,9 @@ class USBKeyboardInterface(USBInterface):
                     continue
 
                 if event.code == 1:
+                    self.update_hackBrakes(event)
                     self.brakes_pressed = event.value
-                    #TODO collect time spent with brakes_pressed == 1; otherwise short keypresses aren't tracked in time event above
+
                     if self.brakes_pressed == 1:
                         self.button1_status_led.write('255\n')
                     else:
@@ -155,8 +158,9 @@ class USBKeyboardInterface(USBInterface):
                     self.button1_status_led.flush()
 
                 if event.code == 2:
+                    self.update_hackGas(event)
                     self.gas_pressed = event.value
-                    #TODO collect time spent with gas_pressed == 1 ; other short keypresses aren't tracked int timer events above
+
                     if self.gas_pressed == 1:
                         self.button2_status_led.write('255\n')
                     else:
@@ -165,6 +169,22 @@ class USBKeyboardInterface(USBInterface):
 
                 self.rate_limit()
                 return #always return after writing a packet
+
+    def update_hackGas(self, event):
+        if self.gas_pressed == 1: #button going-to-be-released or might be rate limited
+            if self.gas_last_timestamp < 0:
+                print("error: gas_last_timestamp not set")
+            self.hackGas -= event.timestamp() - self.gas_last_timestamp
+            self.hackGas = max(0, self.hackGas)
+        self.gas_last_timestamp = event.timestamp()
+
+    def update_hackBrakes(self, event):
+        if self.brakes_pressed == 1: #button going-to-be-released or might be rate limited
+            if self.brakes_last_timestamp < 0:
+                print("error: brakes_last_timestamp not set")
+            self.hackBrakes -= event.timestamp() - self.brakes_last_timestamp
+            self.hackBrakes = max(0, self.hackBrakes)
+        self.brakes_last_timestamp = event.timestamp()
 
     def rate_limit(self):
         send_keys = []
