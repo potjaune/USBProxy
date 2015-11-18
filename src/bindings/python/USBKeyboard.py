@@ -65,7 +65,7 @@ class USBKeyboardInterface(USBInterface):
 
         #arduino led tubes
         #TODO: run stty to set 115200,sane
-        self.led_tubes_pipe = open('/dev/ttyUSB0', 'w')
+        self.led_tubes_pipe = open('/dev/ttyACM0', 'w')
 
         #TODO
         self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
@@ -103,7 +103,7 @@ class USBKeyboardInterface(USBInterface):
         self.button1_rate_led.flush()
 
         tubeval = max(0,min(5,self.hackBrakes))
-        tubeval = tubeval/5*85
+        tubeval = (tubeval*17)
         self.led_tubes_pipe.write('t%d,' % tubeval)
         #the tubes are flushed by this command below: self.led_tubes_pipe.flush()
 
@@ -113,10 +113,10 @@ class USBKeyboardInterface(USBInterface):
             self.button2_rate_led.write('0\n')
         self.button2_rate_led.flush()
 
-        tubeval = max(0,min(5,self.hackGas)
-        tubeval = tubeval/5*85
+        tubeval = max(0,min(5,self.hackGas))
+        tubeval = tubeval*17
         self.led_tubes_pipe.write('T%d,' % tubeval)
-
+        
         self.led_tubes_pipe.flush()
 
     def handle_buffer_available(self):
