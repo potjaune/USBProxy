@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+os.system("stty -F %s 115200 cs8 -icrnl ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts" % sys.argv[1])
+fd = open(sys.argv[1], 'w')
+for x in range(0,256):
+	val = int(x)
+	fd.write(chr(val))
+	fd.flush()

@@ -64,7 +64,7 @@ class USBKeyboardInterface(USBInterface):
             contents.close()
 
         #arduino led tubes
-        #TODO: run stty to set 115200,sane
+        os.system("stty -F %s 115200 cs8 -icrnl ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts" % '/dev/ttyACM0')
         self.led_tubes_pipe = open('/dev/ttyACM0', 'wb')
         self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
         self.MAX_TUBE_SECONDS = 5.0
