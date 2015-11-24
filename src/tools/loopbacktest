@@ -1,0 +1,23 @@
+#!/bin/bash
+SCRIPT_DIR="$(readlink -m $(dirname $0))"
+
+touch /tmp/loopbacktestref
+${SCRIPT_DIR}/write-loopbacktest /tmp/loopbacktestref 2>/dev/null
+echo IRDETO Echo Test:|cat - /tmp/loopbacktestref >/tmp/tmp
+mv /tmp/tmp /tmp/loopbacktestref
+
+stdbuf -o0 cat /dev/ttyACM0 > /tmp/loopbacktest &
+sleep 2
+
+${SCRIPT_DIR}/write-loopbacktest /dev/ttyACM0
+
+sleep 2
+
+if ! cmp -b /tmp/loopbacktestref /tmp/loopbacktest; then
+	echo FAIL
+else
+	echo PASS
+fi
+
+kill %%
+
