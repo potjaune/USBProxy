@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import os
+import sys
+from evdev import UInput, ecodes as e
+
+PORT = '/dev/ttyACM0'
+
+os.system("stty -F %s 115200 cs8 -icrnl ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts" % PORT)
+serial = open(PORT, 'r')
+
+log = open('/var/log/buttons.log', 'a')
+
+ui = UInput()
+
+RESTART = ord(b'\x04')
+BUTTON2 = ord(b'\x02')
+BUTTON1 = ord(b'\x01')
+
+state = ord(b'\x00')
+while 1:
+	c=ord(serial.read(1))
+	change = state ^ c
+	if change & RESTART:
+		ui.write(e.EV_KEY, 3, 1 if c & RESTART != 0 else 0)
+	if change & BUTTON2:
+		ui.write(e.EV_KEY, 2, 1 if c & BUTTON2 != 0 else 0)
+		log.write("brake supression attempted\n")
+	if change & BUTTON1:
+		ui.write(e.EV_KEY, 1, 1 if c & BUTTON1 != 0 else 0)
+		log.write("full throttle attempted\n")
+	log.flush()
+	ui.syn()
+	state = c
