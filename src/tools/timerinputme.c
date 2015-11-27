@@ -60,7 +60,7 @@ main(void)
 		die("error: write");
 	if(write(fd, &report, sizeof(struct input_event)) < 0)
 		die("error: write syn");
-	sleep(1);
+	usleep(200000);
     }
 
     sleep(2);
