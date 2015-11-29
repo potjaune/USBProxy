@@ -66,7 +66,7 @@ add_library(USBProxy SHARED ${cpp_sources} ${c_sources})
 
 set_source_files_properties(${cpp_sources} PROPERTIES COMPILE_FLAGS  "${CMAKE_CPP_FLAGS}")
 
-set_target_properties(USBProxy PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION} SOVERSION 0)
+#set_target_properties(USBProxy PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION} SOVERSION 0)
 
 target_link_libraries(USBProxy ${LIBUSBPROXY_LIBS} ${CMAKE_DL_LIBS}
                                ${CMAKE_THREAD_LIBS_INIT} rt)
