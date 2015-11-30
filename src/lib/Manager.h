@@ -49,19 +49,19 @@ private:
 	Injector** injectors;
 	__u8 injectorCount;
 
-	std::vector<std::thread> injectorThreads;
+	std::vector<pthread_t> injectorThreads;
 
 	Endpoint* in_endpoints[16];
 	RelayReader* in_readers[16];
 	RelayWriter* in_writers[16];
-	std::thread in_readerThreads[16];
-	std::thread in_writerThreads[16];
+	pthread_t in_readerThreads[16];
+	pthread_t in_writerThreads[16];
 
 	Endpoint* out_endpoints[16];
 	RelayReader* out_readers[16];
 	RelayWriter* out_writers[16];
-	std::thread out_readerThreads[16];
-	std::thread out_writerThreads[16];
+	pthread_t out_readerThreads[16];
+	pthread_t out_writerThreads[16];
 
 	void start_data_relaying();
 

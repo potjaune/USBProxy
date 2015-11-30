@@ -14,6 +14,7 @@ LIST(APPEND PLUGINS_LINK_LIBS USBProxy)
 LIST(APPEND PLUGINS DeviceProxy_Loopback DeviceProxy_TCP DeviceProxy_Callback)
 
 find_package(USB1)
+message("HAMMAD ${LIBUSB_FOUND}")
 
 if( ${LIBUSB_FOUND} )
 	LIST(APPEND PLUGINS DeviceProxy_LibUSB)

@@ -65,36 +65,40 @@ Manager::~Manager() {
 	int i;
 	for (i=0;i<16;i++) {
 		if (in_readers[i]) {
-			if (in_readerThreads[i].joinable()) {
+			if (in_readerThreads[i]) {
 				in_readers[i]->please_stop();
-				in_readerThreads[i].join();
+				pthread_join(in_readerThreads[i], NULL);
+				in_readerThreads[i] = 0;
 			}
 			delete(in_readers[i]);
 			in_readers[i]=NULL;
 		}
 
 		if (in_writers[i]) {
-			if (in_writerThreads[i].joinable()) {
+			if (in_writerThreads[i]) {
 				in_writers[i]->please_stop();
-				in_writerThreads[i].join();
+				pthread_join(in_writerThreads[i], NULL);
+				in_writerThreads[i] = 0;
 			}
 			delete(in_writers[i]);
 			in_writers[i]=NULL;
 		}
 
 		if (out_readers[i]) {
-			if (out_readerThreads[i].joinable()) {
+			if (out_readerThreads[i]) {
 				out_readers[i]->please_stop();
-				out_readerThreads[i].join();
+				pthread_join(out_readerThreads[i], NULL);
+				out_readerThreads[i] = 0;
 			}
 			delete(out_readers[i]);
 			out_readers[i]=NULL;
 		}
 
 		if (out_writers[i]) {
-			if (out_writerThreads[i].joinable()) {
+			if (out_writerThreads[i]) {
 				out_writers[i]->please_stop();
-				out_writerThreads[i].join();
+				pthread_join(out_writerThreads[i], NULL);
+				out_writerThreads[i] = 0;
 			}
 			delete(out_writers[i]);
 			out_writers[i]=NULL;
@@ -104,7 +108,8 @@ Manager::~Manager() {
 		if (injectors[i])
 			injectors[i]->please_stop();
 	for (auto& i_thread: injectorThreads)
-		i_thread.join();
+		//i_thread.join();
+		pthread_join(i_thread, NULL);
 	injectorThreads.clear();
 	if (injectors) {
 		free(injectors);
@@ -224,6 +229,24 @@ inline std::string shex(unsigned num)
 	return os.str();
 }
 
+void* call_injector_listen(void* i)
+{
+	Injector* injector = (Injector*) i;
+	injector->listen();
+}
+
+void* call_relay_read(void* r)
+{
+	RelayReader* reader = (RelayReader*) r;
+	reader->relay_read();
+}
+
+void* call_relay_write(void* w)
+{
+	RelayWriter* writer = (RelayWriter*) w;
+	writer->relay_write();
+}
+
 void Manager::start_control_relaying(){
 	clean_mqueue();
 
@@ -332,8 +355,10 @@ void Manager::start_control_relaying(){
 	if (injectorCount) {
 		injectorThreads.reserve(injectorCount);
 		for(i=0;i<injectorCount;i++) {
+			pthread_t t;
 			if (status!=USBM_SETUP) {stop_relaying();return;}
-			injectorThreads.push_back(std::thread(&Injector::listen, injectors[i]));
+			pthread_create(&t, NULL, &call_injector_listen, injectors[i]);
+			injectorThreads.push_back(t);
 		}
 	}
 
@@ -350,11 +375,13 @@ void Manager::start_control_relaying(){
 	}
 
 	if (out_readers[0]) {
-		out_readerThreads[0] = std::thread(&RelayReader::relay_read, out_readers[0]);
+		//out_readerThreads[0] = std::thread(&RelayReader::relay_read, out_readers[0]);
+		pthread_create(&out_readerThreads[i], NULL, &call_relay_read, out_readers[0]);
 	}
 	if (status!=USBM_SETUP) {status=USBM_SETUP_ABORT;stop_relaying();return;}
 	if (out_writers[0]) {
-		out_writerThreads[0] = std::thread(&RelayWriter::relay_write, out_writers[0]);
+		//out_writerThreads[0] = std::thread(&RelayWriter::relay_write, out_writers[0]);
+		pthread_create(&out_writerThreads[i], NULL, &call_relay_write, out_writers[0]);
 	}
 	if (status!=USBM_SETUP) {stop_relaying();return;}
 	status=USBM_RELAYING;
@@ -476,16 +503,20 @@ void Manager::start_data_relaying() {
 
 	for(i=1;i<16;i++) {
 		if (in_readers[i]) {
-			in_readerThreads[i] = std::thread(&RelayReader::relay_read, in_readers[i]);
+			//in_readerThreads[i] = std::thread(&RelayReader::relay_read, in_readers[i]);
+			pthread_create(&in_readerThreads[i], NULL, &call_relay_read, in_readers[i]);
 		}
 		if (in_writers[i]) {
-			in_writerThreads[i] = std::thread(&RelayWriter::relay_write, in_writers[i]);
+			//in_writerThreads[i] = std::thread(&RelayWriter::relay_write, in_writers[i]);
+			pthread_create(&in_writerThreads[i], NULL, &call_relay_write, in_writers[i]);
 		}
 		if (out_readers[i]) {
-			out_readerThreads[i] = std::thread(&RelayReader::relay_read, out_readers[i]);
+			//out_readerThreads[i] = std::thread(&RelayReader::relay_read, out_readers[i]);
+			pthread_create(&out_readerThreads[i], NULL, &call_relay_read, out_readers[i]);
 		}
 		if (out_writers[i]) {
-			out_writerThreads[i] = std::thread(&RelayWriter::relay_write, out_writers[i]);
+			//out_writerThreads[i] = std::thread(&RelayWriter::relay_write, out_writers[i]);
+			pthread_create(&out_writerThreads[i], NULL, &call_relay_write, out_writers[i]);
 		}
 	}
 }
@@ -503,15 +534,16 @@ void Manager::stop_relaying(){
 
 	//signal all relayer threads to stop ASAP
 	for(i=0;i<16;i++) {
-		if (in_readerThreads[i].joinable()) {in_readers[i]->please_stop();}
-		if (in_writerThreads[i].joinable()) {in_writers[i]->please_stop();}
-		if (out_readerThreads[i].joinable()) {out_readers[i]->please_stop();}
-		if (out_writerThreads[i].joinable()) {out_writers[i]->please_stop();}
+		if (in_readerThreads[i]) {in_readers[i]->please_stop();}
+		if (in_writerThreads[i]) {in_writers[i]->please_stop();}
+		if (out_readerThreads[i]) {out_readers[i]->please_stop();}
+		if (out_writerThreads[i]) {out_writers[i]->please_stop();}
 	}
 
 	//wait for all injector threads to stop
 	for (auto& i_thread: injectorThreads)
-		i_thread.join();
+		//i_thread.join();
+		pthread_join(i_thread, NULL);
 	injectorThreads.clear();
 
 
@@ -519,15 +551,17 @@ void Manager::stop_relaying(){
 	for(i=0;i<16;i++) {
 		if (in_endpoints[i]) {in_endpoints[i]=NULL;}
 		if (in_readers[i]) {
-			if (in_readerThreads[i].joinable()) {
-				in_readerThreads[i].join();
+			if (in_readerThreads[i]) {
+				pthread_join(in_readerThreads[i], NULL);
+				in_readerThreads[i] = 0;
 			}
 			delete(in_readers[i]);
 			in_readers[i]=NULL;
 		}
 		if (in_writers[i]) {
-			if (in_writerThreads[i].joinable()) {
-				in_writerThreads[i].join();
+			if (in_writerThreads[i]) {
+				pthread_join(in_writerThreads[i], NULL);
+				in_writerThreads[i] = 0;
 			}
 			delete(in_writers[i]);
 			in_writers[i]=NULL;
@@ -535,15 +569,17 @@ void Manager::stop_relaying(){
 
 		if (out_endpoints[i]) {out_endpoints[i]=NULL;}
 		if (out_readers[i]) {
-			if (out_readerThreads[i].joinable()) {
-				out_readerThreads[i].join();
+			if (out_readerThreads[i]) {
+				pthread_join(out_readerThreads[i], NULL);
+				out_readerThreads[i] = 0;
 			}
 			delete(out_readers[i]);
 			out_readers[i]=NULL;
 		}
 		if (out_writers[i]) {
-			if (out_writerThreads[i].joinable()) {
-				out_writerThreads[i].join();
+			if (out_writerThreads[i]) {
+				pthread_join(out_writerThreads[i], NULL);
+				out_writerThreads[i] = 0;
 			}
 			delete(out_writers[i]);
 			out_writers[i]=NULL;
