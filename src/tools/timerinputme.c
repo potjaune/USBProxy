@@ -12,10 +12,12 @@
         exit(EXIT_FAILURE); \
     } while(0)
 
+#define KEYCODE_TIMER 0x1
+
 int
 main(void)
 {
-    int                    fd;
+    int                    fd, i;
     struct uinput_user_dev uidev;
     struct input_event     ev, report;
 
@@ -26,9 +28,12 @@ main(void)
     if(ioctl(fd, UI_SET_EVBIT, EV_KEY) < 0)
         die("error: ioctl");
 
-    if(ioctl(fd, UI_SET_KEYBIT, 17))
-        die("error: ioctl");
-    
+    /* Allow all keycodes -- makes injecting from other processes simpler*/
+    for(i=0; i<256; i++)
+    {
+	if(ioctl(fd, UI_SET_KEYBIT, i))
+	    die("error: ioctl");
+    }
 
     memset(&uidev, 0, sizeof(uidev));
     snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "timerinputme");
@@ -50,7 +55,7 @@ main(void)
     report.code = SYN_REPORT;
     memset(&ev, 0, sizeof(struct input_event));
     ev.type = EV_KEY;
-    ev.code = 17;
+    ev.code = KEYCODE_TIMER;
     while(1) {
 	ev.value = 1;
 	if(write(fd, &ev, sizeof(struct input_event)) < 0)

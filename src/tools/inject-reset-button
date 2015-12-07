@@ -5,7 +5,7 @@ def inject_to_evdev_file(path):
 	os.chmod(path, 666)
 	event_file = open(path,'w')
 
-	#NB: valid layout on BBB -- not on x64 
+	#NB: valid layout on BBB -- not on x64
 	#int timestamp (1), int timestamp (2), short type, short code, int value -- all LSB
 
 	#press key 3

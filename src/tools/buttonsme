@@ -17,17 +17,27 @@ RESTART = ord(b'\x04')
 BUTTON2 = ord(b'\x02')
 BUTTON1 = ord(b'\x01')
 
+global KEYCODE_GAS
+global KEYCODE_BRAKESOFF
+KEYCODE_GAS = 0x04 #a
+KEYCODE_BRAKESOFF = 0x14 #q
+
+global KEYCODE_TIMER
+global KEYCODE_RESET
+KEYCODE_TIMER = 0x1 #not sent-along; so use a value outside of valid keyboard scan codes
+KEYCODE_RESET = 0x3 #not sent-along; so use a value outside of valid keyboard scan codes
+
 state = ord(b'\x00')
 while 1:
 	c=ord(serial.read(1))
 	change = state ^ c
 	if change & RESTART:
-		ui.write(e.EV_KEY, 3, 1 if c & RESTART != 0 else 0)
+		ui.write(e.EV_KEY, KEYCODE_RESET, 1 if c & RESTART != 0 else 0)
 	if change & BUTTON2:
-		ui.write(e.EV_KEY, 2, 1 if c & BUTTON2 != 0 else 0)
+		ui.write(e.EV_KEY, KEYCODE_GAS, 1 if c & BUTTON2 != 0 else 0)
 		log.write("brake supression attempted\n")
 	if change & BUTTON1:
-		ui.write(e.EV_KEY, 1, 1 if c & BUTTON1 != 0 else 0)
+		ui.write(e.EV_KEY, KEYCODE_BRAKESOFF, 1 if c & BUTTON1 != 0 else 0)
 		log.write("full throttle attempted\n")
 	log.flush()
 	ui.syn()
