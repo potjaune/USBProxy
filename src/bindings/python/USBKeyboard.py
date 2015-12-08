@@ -48,34 +48,43 @@ class USBKeyboardInterface(USBInterface):
                 [ self.endpoint ],
                 descriptors
         )
+        if os.path.isfile("/dev/ttyACM0"):
+            self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
+        else:
+            self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
 
-        self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
         self.current_keys = [0]
 
         #clear all the LEDs
         for ledpath in os.listdir('/sys/class/leds/'):
-            contents = open('/sys/class/leds/' + ledpath + '/trigger', 'w')
-            contents.write('none\n');
-            contents.close()
+            if os.path.isfile('/sys/class/leds/' + ledpath + '/trigger'):
+                contents = open('/sys/class/leds/' + ledpath + '/trigger', 'w')
+                contents.write('none\n');
+                contents.close()
             contents = open('/sys/class/leds/' + ledpath + '/brightness', 'w')
             contents.write('0\n')
             contents.close()
 
-        #arduino led tubes
-        self.led_tubes_pipe = open('/dev/ttyACM0', 'wb')
-        self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
-        self.MAX_TUBE_SECONDS = 5.0
 
-        #TODO
+        #arduino led tubes
+        if os.path.isfile("/dev/ttyACM0"):
+            self.led_tubes_pipe = open('/dev/ttyACM0', 'wb')
+            self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
+            self.MAX_TUBE_SECONDS = 5.0
+
+        #TODO                                                            
         self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
         #self.button1_rate_led = open('/sys/class/leds/beaglebone:green:usr3/brightness', 'w')
-        self.button1_status_led = open('/sys/class/leds/beaglebone:green:usr2/brightness', 'w')
-        self.button2_status_led = open('/sys/class/leds/beaglebone:green:mmc0/brightness', 'w')
+        if os.path.isfile("/sys/class/leds/beaglebone:green:usr2/brightness"):
+            self.button1_status_led = open('/sys/class/leds/beaglebone:green:usr2/brightness', 'w')
+        if os.path.isfile("/sys/class/leds/beaglebone:green:mmc0/brightness"):                            
+            self.button2_status_led = open('/sys/class/leds/beaglebone:green:mmc0/brightness', 'w')
         #TODO
         self.button2_rate_led = open('/sys/class/leds/switch:green:led_B/brightness', 'w')
         #self.button2_rate_led = open('/sys/class/leds/beaglebone:green:heartbeat/brightness', 'w')
+
 
         self.brakes_pressed = 0
         self.gas_pressed = 0
