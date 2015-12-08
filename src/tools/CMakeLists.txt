@@ -21,3 +21,14 @@ install(TARGETS timerinputme RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 add_executable(evdev-usb-bridge evdev-usb-bridge.c)
 install(TARGETS evdev-usb-bridge RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 
+install(FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/buttonsme
+	${CMAKE_CURRENT_SOURCE_DIR}/inject-reset-button
+	${CMAKE_CURRENT_SOURCE_DIR}/send-a-udp
+	${CMAKE_CURRENT_SOURCE_DIR}/inject-reset-button
+	${CMAKE_CURRENT_SOURCE_DIR}/loopbacktest
+	${CMAKE_CURRENT_SOURCE_DIR}/write-loopbacktest
+	DESTINATION ${INSTALL_DEFAULT_BINDIR}
+	COMPONENT pythonScripts
+	PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+	)
