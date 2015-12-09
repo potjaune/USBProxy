@@ -50,10 +50,11 @@ class USBKeyboardInterface(USBInterface):
         )
         if os.path.isfile("/dev/ttyACM0"):
             self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
-            arduinoOn = 0
+            global arudinoON
+            arduinoON = 0
         else:
             self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
-            arduinoOn = 1
+            arduinoON = 1
 
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
