@@ -50,8 +50,10 @@ class USBKeyboardInterface(USBInterface):
         )
         if os.path.isfile("/dev/ttyACM0"):
             self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
+            arduinoOn = 0
         else:
             self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
+            arduinoOn = 1
 
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
@@ -67,12 +69,13 @@ class USBKeyboardInterface(USBInterface):
             contents.write('0\n')
             contents.close()
 
-
+        
         #arduino led tubes
-        if os.path.isfile("/dev/ttyACM0"):
+        if arduinoON == 0:
             self.led_tubes_pipe = open('/dev/ttyACM0', 'wb')
             self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
             self.MAX_TUBE_SECONDS = 5.0
+            
 
         #TODO                                                            
         self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
@@ -132,7 +135,8 @@ class USBKeyboardInterface(USBInterface):
         tubeval = max(0,min(5.0,self.hackBrakes))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
         tubeval |= FLAG_AUTO_DEMO_MODE | FLAG_TUBE1
-        self.led_tubes_pipe.write(bytes([tubeval]))
+        if arduinoON == 0:
+            self.led_tubes_pipe.write(bytes([tubeval]))
         #the tubes are flushed by this command below: self.led_tubes_pipe.flush()
 
         if self.hackGas > 0:
@@ -144,8 +148,9 @@ class USBKeyboardInterface(USBInterface):
         tubeval = max(0,min(5.0,self.hackGas))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
         tubeval |= FLAG_AUTO_DEMO_MODE
-        self.led_tubes_pipe.write(bytes([tubeval]))
-        self.led_tubes_pipe.flush()
+        if aduinoON == 0:
+            self.led_tubes_pipe.write(bytes([tubeval]))
+            self.led_tubes_pipe.flush()
 
     def handle_buffer_available(self):
         r, w, x = select(self.devices, [], [])
