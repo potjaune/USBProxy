@@ -7,8 +7,12 @@ from evdev import UInput, ecodes as e
 PORT = '/dev/ttyACM0'
 
 os.system("stty -F %s 115200 cs8 -icrnl ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts" % PORT)
-serial = open(PORT, 'r')
 
+try:
+	serial = open(PORT, 'r')
+except:
+	exit()
+	
 log = open('/var/log/buttons.log', 'a')
 
 ui = UInput()
