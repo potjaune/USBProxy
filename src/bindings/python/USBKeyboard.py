@@ -221,21 +221,9 @@ class USBKeyboardInterface(USBInterface):
                     self.update_hackBrakes(event)
                     self.brakes_pressed = event.value
 
-                    if self.brakes_pressed == 1:
-                        self.button1_status_led.write('255\n')
-                    else:
-                        self.button1_status_led.write('0\n')
-                    self.button1_status_led.flush()
-
                 if event.code == KEYCODE_GAS:
                     self.update_hackGas(event)
                     self.gas_pressed = event.value
-
-                    if self.gas_pressed == 1:
-                        self.button2_status_led.write('255\n')
-                    else:
-                        self.button2_status_led.write('0\n')
-                    self.button2_status_led.flush()
 
                 self.rate_limit()
                 return #always return after writing a packet
