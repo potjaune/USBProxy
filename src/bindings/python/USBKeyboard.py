@@ -211,8 +211,8 @@ class USBKeyboardInterface(USBInterface):
                         print("pass-through of scancode %d" % event.code)
                         self.passthru_keys.append(event.code)
                     else:
-                        #NB: removes the first value -- not all values
-                        self.passthru_keys.remove(event.code)
+                        while event.code in self.passthru_keys:
+                            self.passthru_keys.remove(event.code)
 
                     self.rate_limit()
                     return #always return after writing a packet
