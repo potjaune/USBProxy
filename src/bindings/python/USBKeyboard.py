@@ -129,7 +129,7 @@ class USBKeyboardInterface(USBInterface):
 
     global KEYCODE_TIMER
     global KEYCODE_RESET
-    KEYCODE_TIMER = 0x11 #not sent-along; so use a value outside of valid keyboard scan codes
+    KEYCODE_TIMER = 0x01 #not sent-along; so use a value outside of valid keyboard scan codes
     KEYCODE_RESET = 0x03 #not sent-along; so use a value outside of valid keyboard scan codes
 
     def update_rate_limiter_leds(self):
