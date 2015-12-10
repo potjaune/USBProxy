@@ -12,9 +12,10 @@ from evdev import InputDevice, categorize, ecodes
 from select import select
 import os
 
+global arduinoON
+
 class USBKeyboardInterface(USBInterface):
     name = "USB keyboard interface"
-
     hid_descriptor = b'\x09\x21\x10\x01\x00\x01\x22\x2b\x00'
     report_descriptor = b'\x05\x01\x09\x06\xA1\x01\x05\x07\x19\xE0\x29\xE7\x15\x00\x25\x01\x75\x01\x95\x08\x81\x02\x95\x01\x75\x08\x81\x01\x19\x00\x29\x65\x15\x00\x25\x65\x75\x08\x95\x06\x81\x00\xC0'
 
@@ -48,13 +49,19 @@ class USBKeyboardInterface(USBInterface):
                 [ self.endpoint ],
                 descriptors
         )
-        if os.path.isfile("/dev/ttyACM0"):
-            self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event0'))
-            global arudinoON
-            arduinoON = 0
+        
+        self.arduinoON = 0
+        try:
+            open('/dev/ttyACM0')
+        except:
+            self.arduinoON = 1
+
+        if self.arduinoON == 0:
+            self.devices = map(InputDevice, ('/dev/input/event2', '/dev/input/event3'))
+            print("here") 
         else:
-            self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event1'))
-            arduinoON = 1
+            self.devices = map(InputDevice, ('/dev/input/event2', '/dev/input/event2'))
+            print("no arudino")
 
         self.devices = {dev.fd: dev for dev in self.devices}
         for dev in self.devices.values(): print(dev)
@@ -72,11 +79,10 @@ class USBKeyboardInterface(USBInterface):
 
         
         #arduino led tubes
-        if arduinoON == 0:
+        if self.arduinoON == 0:
             self.led_tubes_pipe = open('/dev/ttyACM0', 'wb')
-            self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
-            self.MAX_TUBE_SECONDS = 5.0
-            
+        self.NUM_TUBE_LEDS = 13.0 #set these as floats to keep increased granularity from evdev timestamps
+        self.MAX_TUBE_SECONDS = 5.0
 
         #TODO                                                            
         self.button1_rate_led = open('/sys/class/leds/switch:green:led_A/brightness', 'w')
@@ -123,7 +129,7 @@ class USBKeyboardInterface(USBInterface):
 
     global KEYCODE_TIMER
     global KEYCODE_RESET
-    KEYCODE_TIMER = 0x01 #not sent-along; so use a value outside of valid keyboard scan codes
+    KEYCODE_TIMER = 0x11 #not sent-along; so use a value outside of valid keyboard scan codes
     KEYCODE_RESET = 0x03 #not sent-along; so use a value outside of valid keyboard scan codes
 
     def update_rate_limiter_leds(self):
@@ -136,7 +142,7 @@ class USBKeyboardInterface(USBInterface):
         tubeval = max(0,min(5.0,self.hackBrakes))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
         tubeval |= FLAG_AUTO_DEMO_MODE | FLAG_TUBE1
-        if arduinoON == 0:
+        if self.arduinoON == 0:
             self.led_tubes_pipe.write(bytes([tubeval]))
         #the tubes are flushed by this command below: self.led_tubes_pipe.flush()
 
@@ -149,7 +155,7 @@ class USBKeyboardInterface(USBInterface):
         tubeval = max(0,min(5.0,self.hackGas))
         tubeval = int(tubeval*self.NUM_TUBE_LEDS/self.MAX_TUBE_SECONDS)
         tubeval |= FLAG_AUTO_DEMO_MODE
-        if aduinoON == 0:
+        if self.arduinoON == 0:
             self.led_tubes_pipe.write(bytes([tubeval]))
             self.led_tubes_pipe.flush()
 
@@ -186,7 +192,6 @@ class USBKeyboardInterface(USBInterface):
                     self.update_hackGas(event)
 
                     self.update_rate_limiter_leds()
-
                     if (
                             (self.hackBrakes <= 0 and self.brakes_pressed == 1)
                             or (self.hackGas <= 0 and self.gas_pressed == 1)
