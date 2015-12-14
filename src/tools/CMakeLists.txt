@@ -19,6 +19,7 @@ add_executable(timerinputme timerinputme.c)
 install(TARGETS timerinputme RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 
 add_executable(evdev-usb-bridge evdev-usb-bridge.c)
+set_target_properties(evdev-usb-bridge PROPERTIES COMPILE_FLAGS -O0)
 install(TARGETS evdev-usb-bridge RUNTIME DESTINATION ${INSTALL_DEFAULT_BINDIR})
 
 install(FILES
