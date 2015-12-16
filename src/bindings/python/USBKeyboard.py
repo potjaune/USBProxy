@@ -100,15 +100,18 @@ class USBKeyboardInterface(USBInterface):
         self.gas_pressed = 0
         self.brakes_last_timestamp = -1
         self.gas_last_timestamp = -1
-        self.reset_limiter()
+        self.hackBrakes = 5 #5 seconds of brakes
+        self.hackGas = 5 #5 seconds of gas
+        self.hackTimer = 0
+        self.last_timer_timestamp = -1
 
         #KEYCODE_BRAKESOFF and KEYCODE_GAS are rate-limited; all other valid keyboard keycodes are passed-through
         self.passthru_keys = []
         self.last_send_was_nil = 0
 
     def reset_limiter(self):
-        self.hackBrakes = 5 #5 seconds of brakes
-        self.hackGas = 5 #5 seconds of gas
+        self.hackBrakes = 0
+        self.hackGas = 0
         self.hackTimer = 0
         self.last_timer_timestamp = -1
 
