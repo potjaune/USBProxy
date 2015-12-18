@@ -57,8 +57,10 @@ class USBKeyboardInterface(USBInterface):
             self.arduinoON = 1
 
         if self.arduinoON == 0:
-            self.devices = map(InputDevice, ('/dev/input/event2', '/dev/input/event3'))
-            print("here") 
+            if os.path.exists("/dev/input/event3"):
+                self.devices = map(InputDevice, ('/dev/input/event2', '/dev/input/event3'))
+            else
+                self.devices = map(InputDevice, ('/dev/input/event1', '/dev/input/event2'))
         else:
             self.devices = map(InputDevice, ('/dev/input/event2', '/dev/input/event2'))
             print("no arudino")
@@ -100,24 +102,21 @@ class USBKeyboardInterface(USBInterface):
         self.gas_pressed = 0
         self.brakes_last_timestamp = -1
         self.gas_last_timestamp = -1
-        self.hackBrakes = 5 #5 seconds of brakes
-        self.hackGas = 5 #5 seconds of gas
-        self.hackTimer = 0
-        self.last_timer_timestamp = -1
+        self.reset_limiter()
 
         #KEYCODE_BRAKESOFF and KEYCODE_GAS are rate-limited; all other valid keyboard keycodes are passed-through
         self.passthru_keys = []
         self.last_send_was_nil = 0
 
     def reset_limiter(self):
-        self.hackBrakes = 0
-        self.hackGas = 0
+        self.hackBrakes = 5
+        self.hackGas = 5
         self.hackTimer = 0
         self.last_timer_timestamp = -1
 
     def add_limiter(self):
-        self.hackBrakes += 5
-        self.hackGas += 5 #5 seconds of gas
+        self.hackBrakes += 1
+        self.hackGas += 1 #5 seconds of gas
         self.hackTimer = 0
 
     global FLAG_AUTO_DEMO_MODE
@@ -188,7 +187,7 @@ class USBKeyboardInterface(USBInterface):
                         self.hackTimer += event.timestamp() - self.last_timer_timestamp #increase hackTimer by timer period
                     self.last_timer_timestamp = event.timestamp()
 
-                    if self.hackTimer >= 120 : #reset timer and allow button presses after 120
+                    if self.hackTimer >= 30 : #reset timer and allow button presses after 120
                         self.add_limiter()
 
                     self.update_hackBrakes(event)
